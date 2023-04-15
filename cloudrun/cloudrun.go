@@ -6,7 +6,7 @@ import (
 
 	runv2 "cloud.google.com/go/run/apiv2"
 	runpb "cloud.google.com/go/run/apiv2/runpb"
-	"github.com/toyo/jmx/gcp/gce"
+	"github.com/toyo/gcp/gce"
 )
 
 func GetServiceID() string {

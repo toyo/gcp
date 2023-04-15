@@ -14,7 +14,7 @@ import (
 
 	"cloud.google.com/go/logging"
 	"cloud.google.com/go/logging/apiv2/loggingpb"
-	"github.com/toyo/jmx/gcp/gce"
+	"github.com/toyo/gcp/gce"
 	"go.opencensus.io/trace"
 )
 

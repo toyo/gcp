@@ -11,7 +11,7 @@ import (
 	"github.com/toyo/gcp/cloudrun"
 	cloudTrace "github.com/toyo/gcp/cloudtrace"
 	"github.com/toyo/gcp/gce"
-	"github.com/toyo/jmx/log"
+	"github.com/toyo/gcp/log"
 )
 
 // QueueID is taskqueue id.
