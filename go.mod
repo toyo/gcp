@@ -8,7 +8,6 @@ require (
 	cloud.google.com/go/logging v1.7.0
 	cloud.google.com/go/run v1.0.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
-	github.com/toyo/jmx v0.0.0-20230415045018-53155dd7cfb7
 	go.opencensus.io v0.24.0
 	google.golang.org/api v0.118.0
 )
