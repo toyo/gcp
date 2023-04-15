@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	cloudTrace "github.com/toyo/gcp/cloudtrace"
-	"github.com/toyo/jmx/log"
+	"github.com/toyo/gcp/log"
 	"google.golang.org/api/idtoken"
 )
 
