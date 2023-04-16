@@ -2,11 +2,9 @@ package log
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"runtime"
 	"strings"
@@ -15,144 +13,20 @@ import (
 	"cloud.google.com/go/logging"
 	"cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/toyo/gcp/gce"
-	"go.opencensus.io/trace"
 )
 
-type contextKey string
-
-const tokenContextSaver contextKey = "AppEngine2ndGenerationLogger-Saver"
-
-// Entry defines a log entry.
-// https://cloud.google.com/logging/docs/agent/configuration?hl=ja#special-fields
-type Entry struct {
-	Severity     string     `json:"severity,omitempty"`
-	Message      string     `json:"message"`
-	Trace        string     `json:"logging.googleapis.com/trace,omitempty"`
-	SpanID       string     `json:"logging.googleapis.com/spanId,omitempty"`
-	TraceSampled *bool      `json:"logging.googleapis.com/trace_sampled"`
-	TimeStamp    *time.Time `json:"time,omitempty"`
-
-	// Optional. Source code location information associated with the log entry,
-	// if any.
-	SourceLocation *loggingpb.LogEntrySourceLocation `json:"logging.googleapis.com/sourceLocation"`
-}
-
-// String renders an entry structure to the JSON format expected by Cloud Logging.
-func (e Entry) String() string {
-	if e.Severity == "" {
-		e.Severity = "INFO"
-	}
-	out, err := json.Marshal(e)
-	if err != nil {
-		log.Printf("json.Marshal: %v", err)
-	}
-	return string(out)
-}
-
-type contextSaver struct {
-	trace        string
-	spanID       string
-	traceSampled *bool
-}
-
-// NewContextFromReq makes context.
-func NewContextFromReq(req *http.Request) (ctx context.Context) {
-	return AddContextFromReq(req.Context(), req)
-}
-
-// AddContextFromReq send HTTP Request log.
-func AddContextFromReq(ctx context.Context, req *http.Request) context.Context {
-
-	if gce.GetProjectID() != "" {
-		traceHeader := req.Header.Get("X-Cloud-Trace-Context")
-		traceParts := strings.Split(traceHeader, "/")
-		if len(traceParts) > 0 && len(traceParts[0]) > 0 {
-			trace := "projects/" + gce.GetProjectID() + "/traces/" + traceParts[0]
-			ctx = context.WithValue(ctx, tokenContextSaver, contextSaver{trace: trace})
-		}
-	}
-
-	return ctx
-}
-
-func ContextFromSpan(ctx context.Context, span *trace.Span) context.Context {
-	ctx = ContextFromTraceID(ctx, span.SpanContext().TraceID)
-	ctx = ContextFromSpanID(ctx, span.SpanContext().SpanID)
-	ctx = ContextFromTraceSampled(ctx, span.SpanContext().IsSampled())
-
-	return ctx
-}
-
-// ContextFromTraceID make context.
-func ContextFromTraceID(ctx context.Context, traceid trace.TraceID) context.Context {
-
-	if gce.GetProjectID() != "" {
-		cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
-		if !ok {
-			cs = contextSaver{}
-		}
-		cs.trace = "projects/" + gce.GetProjectID() + "/traces/" + hex.EncodeToString(traceid[:])
-		ctx = context.WithValue(ctx, tokenContextSaver, cs)
-	}
-
-	return ctx
-}
-
-// ContextFromSpanID make context.
-func ContextFromSpanID(ctx context.Context, spanid trace.SpanID) context.Context {
-
-	cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
-	if !ok {
-		cs = contextSaver{}
-	}
-	cs.spanID = hex.EncodeToString(spanid[:])
-	ctx = context.WithValue(ctx, tokenContextSaver, cs)
-
-	return ctx
-}
-
-// ContextFromTraceSampled make context.
-func ContextFromTraceSampled(ctx context.Context, traceSampled bool) context.Context {
-
-	cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
-	if !ok {
-		cs = contextSaver{}
-	}
-	cs.traceSampled = &traceSampled
-	ctx = context.WithValue(ctx, tokenContextSaver, cs)
-
-	return ctx
-}
-
 // logged is for logging.
-func logged(ctx context.Context, severity logging.Severity, payloadi interface{}) {
+func logged(ctx context.Context, severity logging.Severity, payload interface{}) {
 
 	const stdout = false
 
-	var payload string
-
-	switch v := payloadi.(type) {
-	case string:
-		payload = v
-	case fmt.Stringer:
-		payload = v.String()
-	case fmt.GoStringer:
-		payload = v.GoString()
-	default:
-		var builder strings.Builder
-		json.NewEncoder(&builder).Encode(payloadi)
-		payload = builder.String()
-	}
-
-	//
-
 	if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
 
-		if !stdout {
+		if !stdout && gce.GetProjectID() != `` {
 
 			e := logging.Entry{
 				Timestamp:    time.Now(),
-				Payload:      payloadi,
+				Payload:      payload,
 				Severity:     severity,
 				Trace:        cs.trace,
 				SpanID:       cs.spanID,
@@ -169,17 +43,32 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 
 			client.Logger(`github.com/toyo/gcp/log`).Log(e)
 		} else {
-			if len(payload) < 65536 {
+			var message string
+
+			switch v := payload.(type) {
+			case string:
+				message = v
+			case fmt.Stringer:
+				message = v.String()
+			case fmt.GoStringer:
+				message = v.GoString()
+			default:
+				var builder strings.Builder
+				json.NewEncoder(&builder).Encode(payload)
+				message = builder.String()
+			}
+			if len(message) < 65536 {
 
 				t := time.Now()
 
-				e := Entry{}
-				e.Message = payload
-				e.Severity = severity.String()
-				e.TimeStamp = &t
-				e.Trace = cs.trace
-				e.SpanID = cs.spanID
-				e.TraceSampled = cs.traceSampled
+				e := Entry{
+					Severity:     severity.String(),
+					Message:      message,
+					Trace:        cs.trace,
+					SpanID:       cs.spanID,
+					TraceSampled: cs.traceSampled,
+					TimeStamp:    &t,
+				}
 
 				if pc, file, line, ok := runtime.Caller(2); ok {
 					e.SourceLocation = &loggingpb.LogEntrySourceLocation{
@@ -188,13 +77,12 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 						Function: runtime.FuncForPC(pc).Name(),
 					}
 				}
-				//cs.client.Logger(logName).Log(e)
 				err := json.NewEncoder(os.Stdout).Encode(&e)
 				if err != nil {
-					fmt.Printf("%s %v\n", err.Error(), e)
+					fmt.Printf("%s: %v\n", err.Error(), e)
 				}
 			} else {
-				log.Println(severity.String() + ": " + payload)
+				log.Println(severity.String() + ": " + message)
 			}
 		}
 	}
