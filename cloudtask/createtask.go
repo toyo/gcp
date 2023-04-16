@@ -9,7 +9,7 @@ import (
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/toyo/gcp/cloudrun"
-	cloudTrace "github.com/toyo/gcp/cloudtrace"
+	"github.com/toyo/gcp/cloudtrace"
 	"github.com/toyo/gcp/gce"
 	"github.com/toyo/gcp/log"
 )
@@ -22,7 +22,7 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	const cloudtaskHeader = "X-Cloudtasks-Taskname" // "X-Appengine-Taskname"
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := cloudTrace.Context(r.Context(), r)
+		ctx, span := cloudtrace.Context(r.Context(), r)
 		ctx = log.ContextFromSpan(ctx, span)
 		defer span.End()
 		t, ok := r.Header[cloudtaskHeader]
@@ -43,21 +43,15 @@ func Middleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(MiddlewareFunc(handler.ServeHTTP))
 }
 
-var oidcToken cloudtaskspb.HttpRequest_OidcToken
-
 func taskOidcToken(ctx context.Context) *cloudtaskspb.HttpRequest_OidcToken {
 	if serviceaccount, err := cloudrun.GetServiceAccount(ctx); err == nil {
-		if oidcToken.OidcToken == nil {
-			oidcToken.OidcToken = new(cloudtaskspb.OidcToken)
-		}
-		oidcToken.OidcToken.ServiceAccountEmail = serviceaccount
-		return &oidcToken
+		return &cloudtaskspb.HttpRequest_OidcToken{OidcToken: &cloudtaskspb.OidcToken{ServiceAccountEmail: serviceaccount}}
 	} else {
 		return nil
 	}
 }
 
-// CreateTaskJSON creates appengine task.
+// CreateTaskJSON creates task.
 func CreateTaskJSON(ctx context.Context, cloudtasksclient *cloudtasks.Client, uri, taskID string, argint interface{}) (err error) {
 
 	var b []byte
