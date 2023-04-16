@@ -124,8 +124,6 @@ func ContextFromTraceSampled(ctx context.Context, traceSampled bool) context.Con
 	return ctx
 }
 
-//var logName = `StackDriver`
-
 // logged is for logging.
 func logged(ctx context.Context, severity logging.Severity, payloadi interface{}) {
 
@@ -151,11 +149,6 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 	if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
 
 		if !stdout {
-			// Create a Client
-			client, err := logging.NewClient(ctx, `projects/`+gce.GetProjectID())
-			if err != nil {
-				panic(err.Error())
-			}
 
 			e := logging.Entry{
 				Timestamp:    time.Now(),
