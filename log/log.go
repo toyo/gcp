@@ -33,6 +33,10 @@ func logged(ctx context.Context, severity logging.Severity, payload interface{})
 				TraceSampled: *cs.traceSampled,
 			}
 
+			if cs.traceSampled != nil {
+				e.TraceSampled = *cs.traceSampled
+			}
+
 			if pc, file, line, ok := runtime.Caller(2); ok {
 				e.SourceLocation = &loggingpb.LogEntrySourceLocation{
 					File:     file,
