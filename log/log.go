@@ -129,6 +129,8 @@ func ContextFromTraceSampled(ctx context.Context, traceSampled bool) context.Con
 // logged is for logging.
 func logged(ctx context.Context, severity logging.Severity, payloadi interface{}) {
 
+	const stdout = false
+
 	var payload string
 
 	switch v := payloadi.(type) {
@@ -144,17 +146,26 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 		payload = builder.String()
 	}
 
-	if len(payload) < 65536 {
-		if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
-			t := time.Now()
+	//
 
-			e := Entry{}
-			e.Message = payload
-			e.Severity = severity.String()
-			e.TimeStamp = &t
-			e.Trace = cs.trace
-			e.SpanID = cs.spanID
-			e.TraceSampled = cs.traceSampled
+	if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
+
+		if !stdout {
+			// Create a Client
+			client, err := logging.NewClient(ctx, `projects/`+gce.GetProjectID())
+			if err != nil {
+				panic(err.Error())
+			}
+			lg := client.Logger(`logger`)
+
+			e := logging.Entry{
+				Timestamp:    time.Now(),
+				Payload:      payload,
+				Severity:     severity,
+				Trace:        cs.trace,
+				SpanID:       cs.spanID,
+				TraceSampled: *cs.traceSampled,
+			}
 
 			if pc, file, line, ok := runtime.Caller(2); ok {
 				e.SourceLocation = &loggingpb.LogEntrySourceLocation{
@@ -163,15 +174,38 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 					Function: runtime.FuncForPC(pc).Name(),
 				}
 			}
-			//cs.client.Logger(logName).Log(e)
-			err := json.NewEncoder(os.Stdout).Encode(&e)
-			if err != nil {
-				fmt.Printf("%s %v\n", err.Error(), e)
+
+			lg.Log(e)
+		} else {
+			if len(payload) < 65536 {
+
+				t := time.Now()
+
+				e := Entry{}
+				e.Message = payload
+				e.Severity = severity.String()
+				e.TimeStamp = &t
+				e.Trace = cs.trace
+				e.SpanID = cs.spanID
+				e.TraceSampled = cs.traceSampled
+
+				if pc, file, line, ok := runtime.Caller(2); ok {
+					e.SourceLocation = &loggingpb.LogEntrySourceLocation{
+						File:     file,
+						Line:     int64(line),
+						Function: runtime.FuncForPC(pc).Name(),
+					}
+				}
+				//cs.client.Logger(logName).Log(e)
+				err := json.NewEncoder(os.Stdout).Encode(&e)
+				if err != nil {
+					fmt.Printf("%s %v\n", err.Error(), e)
+				}
+			} else {
+				log.Println(severity.String() + ": " + payload)
 			}
-			return
 		}
 	}
-	log.Println(severity.String() + ": " + payload)
 }
 
 // Default send Application log.
