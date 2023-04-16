@@ -156,11 +156,10 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 			if err != nil {
 				panic(err.Error())
 			}
-			lg := client.Logger(`logger`)
 
 			e := logging.Entry{
 				Timestamp:    time.Now(),
-				Payload:      payload,
+				Payload:      payloadi,
 				Severity:     severity,
 				Trace:        cs.trace,
 				SpanID:       cs.spanID,
@@ -175,7 +174,7 @@ func logged(ctx context.Context, severity logging.Severity, payloadi interface{}
 				}
 			}
 
-			lg.Log(e)
+			client.Logger(`github.com/toyo/gcp/log`).Log(e)
 		} else {
 			if len(payload) < 65536 {
 
