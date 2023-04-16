@@ -25,12 +25,11 @@ func logged(ctx context.Context, severity logging.Severity, payload interface{})
 		if !stdout && gce.GetProjectID() != `` {
 
 			e := logging.Entry{
-				Timestamp:    time.Now(),
-				Payload:      payload,
-				Severity:     severity,
-				Trace:        cs.trace,
-				SpanID:       cs.spanID,
-				TraceSampled: *cs.traceSampled,
+				Timestamp: time.Now(),
+				Payload:   payload,
+				Severity:  severity,
+				Trace:     cs.trace,
+				SpanID:    cs.spanID,
 			}
 
 			if cs.traceSampled != nil {
