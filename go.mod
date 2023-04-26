@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/run v1.0.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.119.0
+	google.golang.org/api v0.120.0
 )
 
 require (

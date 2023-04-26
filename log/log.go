@@ -138,6 +138,71 @@ func Emergency(ctx context.Context, a interface{}) {
 
 //
 
+// DefaultJ send Application log.
+func DefaultJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Debug, l)
+}
+
+// DebugJ send Application log.
+func DebugJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Debug, l)
+}
+
+// InfoJ send Application log.
+func InfoJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Info, l)
+}
+
+// NoticeJ send Application log.
+func NoticeJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Notice, l)
+}
+
+// WarningJ send Application log.
+func WarningJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Warning, l)
+}
+
+// ErrorJ send Application log.
+func ErrorJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Error, l)
+}
+
+// CriticalJ send Application log.
+func CriticalJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Critical, l)
+}
+
+// AlertJ send Application log.
+func AlertJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Alert, l)
+}
+
+// EmergencyJ send Application log.
+func EmergencyJ(ctx context.Context, text string, a interface{}) {
+	l := make(map[string]any)
+	l[text] = a
+	logged(ctx, logging.Emergency, l)
+}
+
+//
+
 // Defaultf send Application log.
 func Defaultf(ctx context.Context, format string, a ...interface{}) {
 	logged(ctx, logging.Default, fmt.Sprintf(format, a...))
@@ -176,4 +241,9 @@ func Criticalf(ctx context.Context, format string, a ...interface{}) {
 // Alertf send Application log.
 func Alertf(ctx context.Context, format string, a ...interface{}) {
 	logged(ctx, logging.Alert, fmt.Sprintf(format, a...))
+}
+
+// Emergencyf send Application log.
+func Emergencyf(ctx context.Context, format string, a ...interface{}) {
+	logged(ctx, logging.Emergency, fmt.Sprintf(format, a...))
 }
