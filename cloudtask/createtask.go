@@ -27,11 +27,11 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 		defer span.End()
 		t, ok := r.Header[cloudtaskHeader]
 		if !ok || len(t[0]) == 0 {
-			log.Error(ctx, "Invalid Task: No "+cloudtaskHeader+" request header found")
-			http.Error(w, "Bad Request - Invalid Task", http.StatusBadRequest)
+			log.Error(ctx, "Invalid Cloudtask: No "+cloudtaskHeader+" request header found")
+			http.Error(w, "Bad Request - Invalid Cloudtask", http.StatusBadRequest)
 			return
 		} else {
-			log.Debugf(ctx, `Access from Cloudtask Validated. Header: %#v`, r.Header)
+			log.DebugJ(ctx, `Valid Cloudtask Header`, r.Header)
 			next(w, r)
 		}
 	}
