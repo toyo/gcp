@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"cloud.google.com/go/compute/metadata"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/toyo/gcp/gce"
 	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
@@ -15,24 +14,21 @@ import (
 )
 
 func init() {
-	if metadata.OnGCE() {
-		if gce.GetProjectID() != `` {
-
-			// Create and register a OpenCensus Stackdriver Trace exporter.
-			exporter, err := stackdriver.NewExporter(stackdriver.Options{
-				ProjectID: gce.GetProjectID(),
-			})
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			trace.RegisterExporter(exporter)
+	if gce.GetProjectID() != `` {
+		// Create and register a OpenCensus Stackdriver Trace exporter.
+		exporter, err := stackdriver.NewExporter(stackdriver.Options{
+			ProjectID: gce.GetProjectID(),
+		})
+		if err != nil {
+			fmt.Println(err.Error())
 		}
+		trace.RegisterExporter(exporter)
 	}
 }
 
 // Context return context and Span. Need Span.Close()
-func Context(c context.Context, r *http.Request) (context.Context, *trace.Span) {
-
+func Context(r *http.Request) (context.Context, *trace.Span) {
+	c := r.Context()
 	if gce.GetProjectID() != `` {
 
 		HTTPFormat := &tracecontext.HTTPFormat{}

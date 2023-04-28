@@ -39,7 +39,7 @@ func HandleFunc(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 func ValidateByEmail(handler func(http.ResponseWriter, *http.Request), email string) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := cloudtrace.Context(r.Context(), r)
+		ctx, span := cloudtrace.Context(r)
 		ctx = log.ContextFromSpan(ctx, span)
 		defer span.End()
 

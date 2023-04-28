@@ -12,7 +12,7 @@ var storedProjectID string
 func GetProjectID() string {
 	if storedProjectID == `` {
 		if !metadata.OnGCE() {
-			panic("this process is not running on GCE")
+			return ``
 		}
 
 		var err error

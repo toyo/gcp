@@ -22,7 +22,7 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	const cloudtaskHeader = "X-Cloudtasks-Taskname" // "X-Appengine-Taskname"
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := cloudtrace.Context(r.Context(), r)
+		ctx, span := cloudtrace.Context(r)
 		ctx = log.ContextFromSpan(ctx, span)
 		defer span.End()
 		t, ok := r.Header[cloudtaskHeader]
