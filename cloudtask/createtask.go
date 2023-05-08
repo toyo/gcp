@@ -9,7 +9,6 @@ import (
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	"cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/toyo/gcp/cloudrun"
-	"github.com/toyo/gcp/cloudtrace"
 	"github.com/toyo/gcp/gce"
 	"github.com/toyo/gcp/log"
 )
@@ -22,9 +21,8 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	const cloudtaskHeader = "X-Cloudtasks-Taskname" // "X-Appengine-Taskname"
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := cloudtrace.Context(r)
-		ctx = log.ContextFromSpan(ctx, span)
-		defer span.End()
+		ctx := log.NewContextFromReq(r)
+
 		t, ok := r.Header[cloudtaskHeader]
 		if !ok || len(t[0]) == 0 {
 			log.Error(ctx, "Invalid Cloudtask: No "+cloudtaskHeader+" request header found")

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/toyo/gcp/cloudtrace"
 	"github.com/toyo/gcp/log"
 	"google.golang.org/api/idtoken"
 )
@@ -39,9 +38,7 @@ func HandleFunc(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 func ValidateByEmail(handler func(http.ResponseWriter, *http.Request), email string) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := cloudtrace.Context(r)
-		ctx = log.ContextFromSpan(ctx, span)
-		defer span.End()
+		ctx := log.NewContextFromReq(r)
 
 		authorization := r.Header.Get(`Authorization`)
 
