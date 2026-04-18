@@ -33,11 +33,13 @@ type contextSaver struct {
 	trace        string
 	spanID       string
 	traceSampled *bool
+	requestID    string
 }
 
 func ContextInit(ctx context.Context, r *http.Request) context.Context {
 	if gce.GetProjectID() != "" || true {
 		var trace, span string
+		var requestID string
 		var sampled *bool
 		traceHeader := r.Header.Get("X-Cloud-Trace-Context")
 		traceParts := strings.Split(traceHeader, "/")
@@ -53,8 +55,15 @@ func ContextInit(ctx context.Context, r *http.Request) context.Context {
 			}
 		}
 
-		ctx = context.WithValue(ctx, tokenContextSaver, contextSaver{trace: trace, spanID: span, traceSampled: sampled})
+		// X-Request-ID ヘッダーの取得（なければ TraceID の先頭部分などで代用）
+		requestID = r.Header.Get("X-Request-ID")
+		if requestID == "" && len(traceParts) > 0 {
+			requestID = traceParts[0]
+		}
 
+		ctx = context.WithValue(ctx, tokenContextSaver, contextSaver{
+			trace: trace, spanID: span, traceSampled: sampled, requestID: requestID,
+		})
 	}
 	return ctx
 }
@@ -90,6 +99,11 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 			record.AddAttrs(
 				slog.Bool("logging.googleapis.com/trace_sampled", *cs.traceSampled),
 			)
+		}
+
+		// 全てのログにリクエスト ID を追加
+		if cs.requestID != "" {
+			record.AddAttrs(slog.String("requestId", cs.requestID))
 		}
 	}
 
