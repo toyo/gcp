@@ -12,17 +12,16 @@ import (
 )
 
 func init() {
-	// Use json as our base logging format.
-	// Add span context attributes when Context is passed to logging calls.
-	// Set this handler as the global slog handler.
+	setLog(slog.LevelDebug)
+}
+
+func setLog(loglevel slog.Leveler) {
 	slog.SetDefault(
 		slog.New(handlerWithSpanContext(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 				ReplaceAttr: replacer,
-				Level:       slog.LevelDebug,
+				Level:       loglevel,
 				AddSource:   true}))))
-
-	//
 }
 
 type contextKey string
@@ -89,6 +88,10 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 		// in https://cloud.google.com/logging/docs/structured-logging#special-payload-fields
 		record.AddAttrs(
 			slog.String("logging.googleapis.com/trace", cs.trace),
+		)
+
+		record.AddAttrs(
+			slog.String("requestId", cs.requestID),
 		)
 
 		record.AddAttrs(
