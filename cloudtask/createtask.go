@@ -3,6 +3,7 @@ package cloudtask
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -10,7 +11,7 @@ import (
 	"cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"github.com/toyo/gcp/cloudrun"
 	"github.com/toyo/gcp/gce"
-	"github.com/toyo/gcp/log"
+	"github.com/toyo/gcp/googlecloudlogging"
 )
 
 // QueueID is taskqueue id.
@@ -21,15 +22,16 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 	const cloudtaskHeader = "X-Cloudtasks-Taskname" // "X-Appengine-Taskname"
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := log.NewContextFromReq(r)
+		ctx := r.Context()
+		ctx = googlecloudlogging.ContextInit(ctx, r)
 
 		t, ok := r.Header[cloudtaskHeader]
 		if !ok || len(t[0]) == 0 {
-			log.Error(ctx, "Invalid Cloudtask: No "+cloudtaskHeader+" request header found")
+			slog.ErrorContext(ctx, "Invalid Cloudtask: No "+cloudtaskHeader+" request header found")
 			http.Error(w, "Bad Request - Invalid Cloudtask", http.StatusBadRequest)
 			return
 		} else {
-			log.DebugJ(ctx, `Valid Cloudtask Header`, r.Header)
+			slog.DebugContext(ctx, `Valid Cloudtask Header`, `Header`, r.Header)
 			next(w, r)
 		}
 	}
@@ -79,7 +81,7 @@ func CreateTaskJSON(ctx context.Context, cloudtasksclient *cloudtasks.Client, ur
 	}
 
 	if _, err = cloudtasksclient.CreateTask(ctx, &taskreq); err == nil {
-		log.Debugf(ctx, "cloudtasks.CreateTask POST %s %s", uri, string(b))
+		slog.DebugContext(ctx, `cloudtasks.CreateTask POST`, `URL`, uri, `POST`, string(b))
 	} else {
 		/*
 			if sts, ok := status.FromError(err); ok && sts.Code() == codes.AlreadyExists {
@@ -117,7 +119,7 @@ func CreateTaskGET(ctx context.Context, cloudtasksclient *cloudtasks.Client, uri
 	}
 
 	if _, err = cloudtasksclient.CreateTask(ctx, &taskreq); err == nil {
-		log.Debugf(ctx, "cloudtasks.CreateTask GET %s?%s", uri, arg.Encode())
+		slog.DebugContext(ctx, `cloudtasks.CreateTask GET`, `URL`, uri, `GET`, arg.Encode())
 	} else { /*
 			if sts, ok := status.FromError(err); ok && sts.Code() == codes.AlreadyExists {
 				duplicate = true
