@@ -27,13 +27,13 @@ func GetProjectID(ctx context.Context) string {
 
 var storedRegion string
 
-func GetRegion() string { // Get region from metadata server
+func GetRegion(ctx context.Context) string { // Get region from metadata server
 	if storedRegion == `` {
-		if !metadata.OnGCE() {
+		if !metadata.OnGCEWithContext(ctx) {
 			panic("this process is not running on GCE")
 		}
 
-		if instanceRegion, err := metadata.Get(`instance/region`); err != nil {
+		if instanceRegion, err := metadata.GetWithContext(ctx, `instance/region`); err != nil {
 			panic(err.Error())
 		} else {
 			splittedInstanceRegion := strings.Split(instanceRegion, `/`)
@@ -49,15 +49,15 @@ func GetRegion() string { // Get region from metadata server
 	return storedRegion
 }
 func GetSlashedProjectsLocations(ctx context.Context) string {
-	return `projects/` + GetProjectID(ctx) + `/locations/` + GetRegion()
+	return `projects/` + GetProjectID(ctx) + `/locations/` + GetRegion(ctx)
 }
 
 func GetServiceAccount(ctx context.Context) (string, error) { // not tested
-	if !metadata.OnGCE() {
+	if !metadata.OnGCEWithContext(ctx) {
 		panic("this process is not running on GCE")
 	}
 
-	if email, err := metadata.Get(`instance/service-accounts/email`); err != nil {
+	if email, err := metadata.GetWithContext(ctx, `instance/service-accounts/email`); err != nil {
 		panic(err.Error())
 	} else {
 		return email, err

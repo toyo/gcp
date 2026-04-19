@@ -63,7 +63,7 @@ func CreateTaskJSON(ctx context.Context, cloudtasksclient *cloudtasks.Client, ur
 	// Build the Task payload.
 	// https://godoc.org/google.golang.org/genproto/googleapis/cloud/tasks/v2#CreateTaskRequest
 	taskreq := cloudtaskspb.CreateTaskRequest{
-		Parent: "projects/" + gce.GetProjectID(ctx) + "/locations/" + gce.GetRegion() + "/queues/" + QueueID,
+		Parent: "projects/" + gce.GetProjectID(ctx) + "/locations/" + gce.GetRegion(ctx) + "/queues/" + QueueID,
 		Task: &cloudtaskspb.Task{
 			MessageType: &cloudtaskspb.Task_HttpRequest{
 				HttpRequest: &cloudtaskspb.HttpRequest{
@@ -103,7 +103,7 @@ func CreateTaskGET(ctx context.Context, cloudtasksclient *cloudtasks.Client, uri
 	// Build the Task payload.
 	// https://godoc.org/google.golang.org/genproto/googleapis/cloud/tasks/v2#CreateTaskRequest
 	taskreq := cloudtaskspb.CreateTaskRequest{
-		Parent: "projects/" + gce.GetProjectID(ctx) + "/locations/" + gce.GetRegion() + "/queues/" + QueueID,
+		Parent: "projects/" + gce.GetProjectID(ctx) + "/locations/" + gce.GetRegion(ctx) + "/queues/" + QueueID,
 		Task: &cloudtaskspb.Task{
 			MessageType: &cloudtaskspb.Task_HttpRequest{
 				HttpRequest: &cloudtaskspb.HttpRequest{
