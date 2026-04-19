@@ -37,14 +37,15 @@ type contextSaver struct {
 
 func ContextInit(ctx context.Context, r *http.Request) context.Context {
 	if gce.GetProjectID() != "" || true {
-		var trace, span string
-		var requestID string
+		var trace, span, requestID string
 		var sampled *bool
+
 		traceHeader := r.Header.Get("X-Cloud-Trace-Context")
 		traceParts := strings.Split(traceHeader, "/")
 		if len(traceParts) > 0 && len(traceParts[0]) > 0 {
 			trace = "projects/" + gce.GetProjectID() + "/traces/" + traceParts[0]
 		}
+
 		spanParts := strings.Split(traceParts[1], `;`)
 		if len(spanParts) > 0 && len(spanParts[0]) > 0 {
 			span = spanParts[0]
@@ -54,7 +55,6 @@ func ContextInit(ctx context.Context, r *http.Request) context.Context {
 			}
 		}
 
-		// X-Request-ID ヘッダーの取得（なければ TraceID の先頭部分などで代用）
 		requestID = r.Header.Get("X-Request-ID")
 		if requestID == "" && len(traceParts) > 0 {
 			requestID = traceParts[0]
@@ -86,17 +86,23 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 	if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
 		// Add trace context attributes following Cloud Logging structured log format described
 		// in https://cloud.google.com/logging/docs/structured-logging#special-payload-fields
-		record.AddAttrs(
-			slog.String("logging.googleapis.com/trace", cs.trace),
-		)
+		if cs.trace != "" {
+			record.AddAttrs(
+				slog.String("logging.googleapis.com/trace", cs.trace),
+			)
+		}
 
-		record.AddAttrs(
-			slog.String("requestId", cs.requestID),
-		)
+		if cs.requestID != "" {
+			record.AddAttrs(
+				slog.String("requestId", cs.requestID),
+			)
+		}
 
-		record.AddAttrs(
-			slog.Any("logging.googleapis.com/spanId", cs.spanID),
-		)
+		if cs.spanID != "" {
+			record.AddAttrs(
+				slog.Any("logging.googleapis.com/spanId", cs.spanID),
+			)
+		}
 
 		if cs.traceSampled != nil {
 			record.AddAttrs(
@@ -104,7 +110,6 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 			)
 		}
 
-		// 全てのログにリクエスト ID を追加
 		if cs.requestID != "" {
 			record.AddAttrs(slog.String("requestId", cs.requestID))
 		}
