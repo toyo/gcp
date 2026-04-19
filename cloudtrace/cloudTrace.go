@@ -14,10 +14,11 @@ import (
 )
 
 func init() {
-	if gce.GetProjectID() != `` {
+	ctx := context.Background()
+	if gce.GetProjectID(ctx) != `` {
 		// Create and register a OpenCensus Stackdriver Trace exporter.
 		exporter, err := stackdriver.NewExporter(stackdriver.Options{
-			ProjectID: gce.GetProjectID(),
+			ProjectID: gce.GetProjectID(ctx),
 		})
 		if err != nil {
 			fmt.Println(err.Error())
@@ -29,7 +30,7 @@ func init() {
 // Context return context and Span. Need Span.Close()
 func Context(r *http.Request) (context.Context, *trace.Span) {
 	c := r.Context()
-	if gce.GetProjectID() != `` {
+	if gce.GetProjectID(c) != `` {
 
 		HTTPFormat := &tracecontext.HTTPFormat{}
 

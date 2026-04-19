@@ -28,11 +28,11 @@ func NewContextFromReq(req *http.Request) (ctx context.Context) {
 // AddContextFromReq send HTTP Request log.
 func AddContextFromReq(ctx context.Context, req *http.Request) context.Context {
 
-	if gce.GetProjectID() != "" {
+	if gce.GetProjectID(ctx) != "" {
 		traceHeader := req.Header.Get("X-Cloud-Trace-Context")
 		traceParts := strings.Split(traceHeader, "/")
 		if len(traceParts) > 0 && len(traceParts[0]) > 0 {
-			trace := "projects/" + gce.GetProjectID() + "/traces/" + traceParts[0]
+			trace := "projects/" + gce.GetProjectID(ctx) + "/traces/" + traceParts[0]
 			ctx = context.WithValue(ctx, tokenContextSaver, contextSaver{trace: trace})
 		}
 	}
@@ -51,12 +51,12 @@ func ContextFromSpan(ctx context.Context, span *trace.Span) context.Context {
 // ContextFromTraceID make context.
 func ContextFromTraceID(ctx context.Context, traceid trace.TraceID) context.Context {
 
-	if gce.GetProjectID() != "" {
+	if gce.GetProjectID(ctx) != "" {
 		cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
 		if !ok {
 			cs = contextSaver{}
 		}
-		cs.trace = "projects/" + gce.GetProjectID() + "/traces/" + hex.EncodeToString(traceid[:])
+		cs.trace = "projects/" + gce.GetProjectID(ctx) + "/traces/" + hex.EncodeToString(traceid[:])
 		ctx = context.WithValue(ctx, tokenContextSaver, cs)
 	}
 

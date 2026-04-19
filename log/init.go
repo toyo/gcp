@@ -11,7 +11,8 @@ var client *logging.Client
 
 func init() {
 	var err error
-	client, err = logging.NewClient(context.Background(), `projects/`+gce.GetProjectID())
+	ctx := context.Background()
+	client, err = logging.NewClient(ctx, `projects/`+gce.GetProjectID(ctx))
 	if err != nil {
 		panic(err.Error())
 	}

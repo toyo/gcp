@@ -36,14 +36,17 @@ type contextSaver struct {
 }
 
 func ContextInit(ctx context.Context, r *http.Request) context.Context {
-	if gce.GetProjectID() != "" || true {
+	if gce.GetProjectID(ctx) != "" || true {
 		var trace, span, requestID string
 		var sampled *bool
 
+		projectID := gce.GetProjectID(ctx)
+
 		traceHeader := r.Header.Get("X-Cloud-Trace-Context")
+
 		traceParts := strings.Split(traceHeader, "/")
-		if len(traceParts) > 0 && len(traceParts[0]) > 0 {
-			trace = "projects/" + gce.GetProjectID() + "/traces/" + traceParts[0]
+		if len(traceParts) > 0 && len(traceParts[0]) > 0 && projectID != "" {
+			trace = "projects/" + projectID + "/traces/" + traceParts[0]
 		}
 
 		spanParts := strings.Split(traceParts[1], `;`)

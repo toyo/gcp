@@ -9,14 +9,15 @@ import (
 
 var storedProjectID string
 
-func GetProjectID() string {
+func GetProjectID(ctx context.Context) string {
+
 	if storedProjectID == `` {
-		if !metadata.OnGCE() {
+		if !metadata.OnGCEWithContext(ctx) {
 			return ``
 		}
 
 		var err error
-		if storedProjectID, err = metadata.ProjectID(); err != nil {
+		if storedProjectID, err = metadata.ProjectIDWithContext(ctx); err != nil {
 			panic(err.Error())
 		}
 	}
@@ -47,8 +48,8 @@ func GetRegion() string { // Get region from metadata server
 	}
 	return storedRegion
 }
-func GetSlashedProjectsLocations() string {
-	return `projects/` + GetProjectID() + `/locations/` + GetRegion()
+func GetSlashedProjectsLocations(ctx context.Context) string {
+	return `projects/` + GetProjectID(ctx) + `/locations/` + GetRegion()
 }
 
 func GetServiceAccount(ctx context.Context) (string, error) { // not tested

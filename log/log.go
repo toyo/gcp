@@ -22,7 +22,7 @@ func logged(ctx context.Context, severity logging.Severity, payload interface{})
 
 	if cs, ok := ctx.Value(tokenContextSaver).(contextSaver); ok {
 
-		if !stdout && gce.GetProjectID() != `` {
+		if !stdout && gce.GetProjectID(ctx) != `` {
 
 			e := logging.Entry{
 				Timestamp: time.Now(),

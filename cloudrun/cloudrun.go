@@ -21,7 +21,7 @@ func GetService(ctx context.Context) (*runpb.Service, error) {
 
 		return c.GetService(ctx,
 			&runpb.GetServiceRequest{
-				Name: gce.GetSlashedProjectsLocations() + `/services/` + GetServiceID(),
+				Name: gce.GetSlashedProjectsLocations(ctx) + `/services/` + GetServiceID(),
 			})
 	}
 }
