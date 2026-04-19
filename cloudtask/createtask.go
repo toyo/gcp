@@ -27,11 +27,12 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 
 		t, ok := r.Header[cloudtaskHeader]
 		if !ok || len(t[0]) == 0 {
-			slog.ErrorContext(ctx, "Invalid Cloudtask: No "+cloudtaskHeader+" request header found")
-			http.Error(w, "Bad Request - Invalid Cloudtask", http.StatusBadRequest)
+			slog.ErrorContext(ctx, `Cloudtask authorization failed. No "+cloudtaskHeader+" request header found.`,
+				`Header`, r.Header)
+			http.Error(w, "Cloudtask authorization failed", http.StatusBadRequest)
 			return
 		} else {
-			slog.DebugContext(ctx, `Valid Cloudtask Header`, `Header`, r.Header)
+			slog.DebugContext(ctx, `Cloudtask authorization success`, `Header`, r.Header)
 			next(w, r)
 		}
 	}
