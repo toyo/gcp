@@ -47,14 +47,15 @@ func ContextInit(ctx context.Context, r *http.Request) context.Context {
 		traceParts := strings.Split(traceHeader, "/")
 		if len(traceParts) > 0 && len(traceParts[0]) > 0 && projectID != "" {
 			trace = "projects/" + projectID + "/traces/" + traceParts[0]
-		}
-
-		spanParts := strings.Split(traceParts[1], `;`)
-		if len(spanParts) > 0 && len(spanParts[0]) > 0 {
-			span = spanParts[0]
-			if len(spanParts) > 1 && len(spanParts[1]) == 3 {
-				sampled = new(bool)
-				*sampled = spanParts[1][2] == 1
+			if len(traceParts) > 1 && len(traceParts[1]) > 0 {
+				spanParts := strings.Split(traceParts[1], `;`)
+				if len(spanParts) > 0 && len(spanParts[0]) > 0 {
+					span = spanParts[0]
+					if len(spanParts) > 1 && len(spanParts[1]) == 3 {
+						sampled = new(bool)
+						*sampled = spanParts[1][2] == 1
+					}
+				}
 			}
 		}
 
