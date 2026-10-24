@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/toyo/gcp/gce"
-	"go.opencensus.io/trace"
 )
 
 type contextKey string
@@ -40,16 +39,8 @@ func AddContextFromReq(ctx context.Context, req *http.Request) context.Context {
 	return ctx
 }
 
-func ContextFromSpan(ctx context.Context, span *trace.Span) context.Context {
-	ctx = ContextFromTraceID(ctx, span.SpanContext().TraceID)
-	ctx = ContextFromSpanID(ctx, span.SpanContext().SpanID)
-	ctx = ContextFromTraceSampled(ctx, span.SpanContext().IsSampled())
-
-	return ctx
-}
-
 // ContextFromTraceID make context.
-func ContextFromTraceID(ctx context.Context, traceid trace.TraceID) context.Context {
+func ContextFromTraceID(ctx context.Context, traceid [16]byte) context.Context {
 
 	if gce.GetProjectID(ctx) != "" {
 		cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
@@ -64,7 +55,7 @@ func ContextFromTraceID(ctx context.Context, traceid trace.TraceID) context.Cont
 }
 
 // ContextFromSpanID make context.
-func ContextFromSpanID(ctx context.Context, spanid trace.SpanID) context.Context {
+func ContextFromSpanID(ctx context.Context, spanid [8]byte) context.Context {
 
 	cs, ok := ctx.Value(tokenContextSaver).(contextSaver)
 	if !ok {
