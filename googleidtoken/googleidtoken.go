@@ -1,17 +1,20 @@
 package googleidtoken
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
-	"github.com/toyo/gcp/log"
+	"github.com/toyo/gcp/googlecloudlogging"
 	"google.golang.org/api/idtoken"
 )
+
+// The Authorization header is never logged: it is a valid token.
 
 func HandleFunc(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := log.NewContextFromReq(r)
+		ctx := googlecloudlogging.ContextInit(r.Context(), r)
 
 		authorization := r.Header.Get(`Authorization`)
 
@@ -20,15 +23,16 @@ func HandleFunc(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 			idtokenstr := authslice[1]
 
 			if p, err := idtoken.Validate(ctx, idtokenstr, ``); p != nil && err == nil {
-				log.Debugf(ctx, `ID Token Validated: %s / %#v`, p.Claims[`email`].(string), p)
+				email, _ := p.Claims[`email`].(string)
+				slog.DebugContext(ctx, `ID Token Validated`, `email`, email)
 				handler(w, r)
 			} else {
-				log.Errorf(ctx, `ID Token Not Validated: %s`, authorization)
+				slog.ErrorContext(ctx, `ID Token Not Validated`, `err`, err)
 				w.Header().Add(`WWW-Authenticate`, `Bearer error="invalid_token"`)
 				w.WriteHeader(http.StatusUnauthorized)
 			}
 		} else {
-			log.Errorf(ctx, `ID Bearer Header: %s`, authorization)
+			slog.ErrorContext(ctx, `No Bearer token in the Authorization header`)
 			w.Header().Add(`WWW-Authenticate`, `Bearer realm="realm"`)
 			w.WriteHeader(http.StatusUnauthorized)
 		}
@@ -38,7 +42,7 @@ func HandleFunc(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 func ValidateByEmail(handler func(http.ResponseWriter, *http.Request), email string) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := log.NewContextFromReq(r)
+		ctx := googlecloudlogging.ContextInit(r.Context(), r)
 
 		authorization := r.Header.Get(`Authorization`)
 
@@ -48,20 +52,20 @@ func ValidateByEmail(handler func(http.ResponseWriter, *http.Request), email str
 
 			if p, err := idtoken.Validate(ctx, idtokenstr, ``); p != nil && err == nil {
 				if em, ok := p.Claims[`email`].(string); ok && em == email {
-					log.Debugf(ctx, `ID Token Validated by email: %s`, em)
+					slog.DebugContext(ctx, `ID Token Validated by email`, `email`, em)
 					handler(w, r)
 				} else {
-					log.Errorf(ctx, `ID Token Validated but wrong email: %s`, em)
+					slog.ErrorContext(ctx, `ID Token Validated but wrong email`, `email`, em)
 					w.Header().Add(`WWW-Authenticate`, `Bearer error="invalid_token"`)
 					w.WriteHeader(http.StatusForbidden)
 				}
 			} else {
-				log.Errorf(ctx, `ID Token Not Validated: %s`, authorization)
+				slog.ErrorContext(ctx, `ID Token Not Validated`, `err`, err)
 				w.Header().Add(`WWW-Authenticate`, `Bearer error="invalid_token"`)
 				w.WriteHeader(http.StatusUnauthorized)
 			}
 		} else {
-			log.Errorf(ctx, `ID Bearer Header: %s`, authorization)
+			slog.ErrorContext(ctx, `No Bearer token in the Authorization header`)
 			w.Header().Add(`WWW-Authenticate`, `Bearer realm="realm"`)
 			w.WriteHeader(http.StatusUnauthorized)
 		}
