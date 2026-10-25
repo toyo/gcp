@@ -3,7 +3,6 @@ module github.com/toyo/gcp
 go 1.26.0
 
 require (
-	cloud.google.com/go/cloudtasks v1.13.7
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/run v1.15.0
 	google.golang.org/api v0.274.0
