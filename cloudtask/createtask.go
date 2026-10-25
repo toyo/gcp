@@ -7,6 +7,9 @@ import (
 	"github.com/toyo/gcp/googlecloudlogging"
 )
 
+// MiddlewareFunc passes only requests from Cloud Tasks (with X-Cloudtasks-Taskname). The header is not
+// authentication; Cloud Run IAM or googleidtoken checks the token. Only the task headers are logged: the
+// Authorization header is a valid token.
 func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 
 	const cloudtaskHeader = "X-Cloudtasks-Taskname" // "X-Appengine-Taskname"
@@ -15,16 +18,15 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 		ctx := r.Context()
 		ctx = googlecloudlogging.ContextInit(ctx, r)
 
-		t, ok := r.Header[cloudtaskHeader]
-		if !ok || len(t[0]) == 0 {
-			slog.ErrorContext(ctx, `Cloudtask authorization failed. No "+cloudtaskHeader+" request header found.`,
-				`Header`, r.Header)
+		task := r.Header.Get(cloudtaskHeader)
+		if task == `` {
+			slog.ErrorContext(ctx, `Not a request from Cloud Tasks: no `+cloudtaskHeader, `url`, r.URL.String())
 			http.Error(w, "Cloudtask authorization failed", http.StatusBadRequest)
 			return
-		} else {
-			slog.DebugContext(ctx, `Cloudtask authorization success`, `Header`, r.Header)
-			next(w, r)
 		}
+		slog.DebugContext(ctx, `Cloudtask authorization success`, `task`, task,
+			`queue`, r.Header.Get(`X-Cloudtasks-Queuename`), `retry`, r.Header.Get(`X-Cloudtasks-Taskretrycount`))
+		next(w, r)
 	}
 }
 
