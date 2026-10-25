@@ -11,6 +11,10 @@ import (
 	"github.com/toyo/gcp/gce"
 )
 
+// LevelCritical is logged as CRITICAL in Cloud Logging, above ERROR. Use it for what needs attention,
+// e.g. an unknown value in JMA XML: slog.Log(ctx, googlecloudlogging.LevelCritical, ...).
+const LevelCritical = slog.LevelError + 4
+
 func init() {
 	setLog(slog.LevelDebug)
 }
@@ -131,8 +135,11 @@ func replacer(groups []string, a slog.Attr) slog.Attr {
 		a.Key = "severity"
 		// Map slog.Level string values to Cloud Logging LogSeverity
 		// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
-		if level := a.Value.Any().(slog.Level); level == slog.LevelWarn {
+		switch level := a.Value.Any().(slog.Level); {
+		case level == slog.LevelWarn:
 			a.Value = slog.StringValue("WARNING")
+		case level >= LevelCritical:
+			a.Value = slog.StringValue("CRITICAL")
 		}
 	case slog.TimeKey:
 		a.Key = "timestamp"
