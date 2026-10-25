@@ -44,7 +44,7 @@ func logged(ctx context.Context, severity logging.Severity, payload interface{})
 				}
 			}
 
-			client.Logger(`github.com/toyo/gcp/log`).Log(e)
+			logger.Log(e)
 		} else {
 			var message string
 

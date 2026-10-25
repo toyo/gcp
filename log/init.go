@@ -7,7 +7,11 @@ import (
 	"github.com/toyo/gcp/gce"
 )
 
-var client *logging.Client
+var (
+	client *logging.Client
+	// logger is shared. Client.Logger starts a goroutine and a bundler on every call, so calling it per entry leaks.
+	logger *logging.Logger
+)
 
 func init() {
 	var err error
@@ -16,4 +20,5 @@ func init() {
 	if err != nil {
 		panic(err.Error())
 	}
+	logger = client.Logger(`github.com/toyo/gcp/log`)
 }
