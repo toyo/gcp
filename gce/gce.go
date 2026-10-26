@@ -3,31 +3,41 @@ package gce
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"cloud.google.com/go/compute/metadata"
 )
 
-var storedProjectID string
+// メタデータサーバーから取った値は、取れたときだけ覚えておく。並行するリクエストから呼ばれるので mu で守る。
+var (
+	mu              sync.Mutex
+	storedProjectID string
+	storedRegion    string
+)
 
 func GetProjectID(ctx context.Context) string {
+	mu.Lock()
+	defer mu.Unlock()
 
 	if storedProjectID == `` {
 		if !metadata.OnGCEWithContext(ctx) {
 			return ``
 		}
 
-		var err error
-		if storedProjectID, err = metadata.ProjectIDWithContext(ctx); err != nil {
+		projectID, err := metadata.ProjectIDWithContext(ctx)
+		if err != nil {
 			panic(err.Error())
 		}
+		storedProjectID = projectID
 	}
 	return storedProjectID
 	//return os.Getenv(`GOOGLE_CLOUD_PROJECT`)
 }
 
-var storedRegion string
-
 func GetRegion(ctx context.Context) string { // Get region from metadata server
+	mu.Lock()
+	defer mu.Unlock()
+
 	if storedRegion == `` {
 		if !metadata.OnGCEWithContext(ctx) {
 			panic("this process is not running on GCE")
@@ -37,7 +47,7 @@ func GetRegion(ctx context.Context) string { // Get region from metadata server
 			panic(err.Error())
 		} else {
 			splittedInstanceRegion := strings.Split(instanceRegion, `/`)
-			for i := 0; i < len(splittedInstanceRegion); i += 2 {
+			for i := 0; i+1 < len(splittedInstanceRegion); i += 2 {
 				if splittedInstanceRegion[i] == `regions` || splittedInstanceRegion[i] == `zones` { // Fallback: get "zone" from metadata server (running on VM e.g. Cloud Run for Anthos)
 					storedRegion = splittedInstanceRegion[i+1]
 					return storedRegion

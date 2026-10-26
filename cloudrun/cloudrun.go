@@ -3,6 +3,7 @@ package cloudrun
 import (
 	"context"
 	"os"
+	"sync"
 
 	runv2 "cloud.google.com/go/run/apiv2"
 	runpb "cloud.google.com/go/run/apiv2/runpb"
@@ -26,9 +27,17 @@ func GetService(ctx context.Context) (*runpb.Service, error) {
 	}
 }
 
-var storedURI string
+// Cloud Run から取った値は、取れたときだけ覚えておく。並行するリクエストから呼ばれるので mu で守る。
+var (
+	mu             sync.Mutex
+	storedURI      string
+	serviceAccount string
+)
 
 func GetURI(ctx context.Context) (string, error) { // Need IAM roles/run.viewer
+	mu.Lock()
+	defer mu.Unlock()
+
 	if storedURI == `` {
 		if resp, err := GetService(ctx); err != nil {
 			return ``, err
@@ -39,9 +48,10 @@ func GetURI(ctx context.Context) (string, error) { // Need IAM roles/run.viewer
 	return storedURI, nil
 }
 
-var serviceAccount string
-
 func GetServiceAccount(ctx context.Context) (string, error) { // Need IAM roles/run.viewer
+	mu.Lock()
+	defer mu.Unlock()
+
 	if serviceAccount == `` {
 		if resp, err := GetService(ctx); err != nil {
 			return ``, err

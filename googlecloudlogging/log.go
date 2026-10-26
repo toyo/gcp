@@ -57,7 +57,7 @@ func ContextInit(ctx context.Context, r *http.Request) context.Context {
 					span = spanParts[0]
 					if len(spanParts) > 1 && len(spanParts[1]) == 3 {
 						sampled = new(bool)
-						*sampled = spanParts[1][2] == 1
+						*sampled = spanParts[1][2] == '1' // "o=1"
 					}
 				}
 			}
@@ -116,10 +116,6 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 			record.AddAttrs(
 				slog.Bool("logging.googleapis.com/trace_sampled", *cs.traceSampled),
 			)
-		}
-
-		if cs.requestID != "" {
-			record.AddAttrs(slog.String("requestId", cs.requestID))
 		}
 	}
 
