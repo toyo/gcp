@@ -12,7 +12,7 @@ import (
 func TestReportName(t *testing.T) {
 	for uri, want := range map[string]string{
 		`https://www.data.jma.go.jp/developer/xml/data/20261026171037_0_VPZU53_010000.xml`: `20261026171037_0_VPZU53_010000`,
-		`file:///jmaxml_20260917_Samples/12_03_01_180117_VPZU53.xml`:                      `12_03_01_180117_VPZU53`,
+		`file:///jmaxml_20260917_Samples/12_03_01_180117_VPZU53.xml`:                       `12_03_01_180117_VPZU53`,
 		``: ``,
 	} {
 		if got := ReportName(uri); got != want {
