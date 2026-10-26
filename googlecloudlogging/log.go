@@ -119,6 +119,10 @@ func (t *spanContextLogHandler) Handle(ctx context.Context, record slog.Record) 
 		}
 	}
 
+	if r, ok := ctx.Value(reportKey{}).(string); ok { // WithReport
+		record.AddAttrs(slog.String(`report`, r))
+	}
+
 	return t.Handler.Handle(ctx, record)
 }
 
