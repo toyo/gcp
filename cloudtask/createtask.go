@@ -20,7 +20,7 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 
 		task := r.Header.Get(cloudtaskHeader)
 		if task == `` {
-			slog.ErrorContext(ctx, `Not a request from Cloud Tasks: no `+cloudtaskHeader, `url`, r.URL.String())
+			slog.ErrorContext(ctx, `Not a request from Cloud Tasks`, `missing`, cloudtaskHeader, `url`, r.URL.String())
 			http.Error(w, "Cloudtask authorization failed", http.StatusBadRequest)
 			return
 		}
