@@ -29,3 +29,20 @@ func TestMiddlewareDoesNotLogToken(t *testing.T) {
 		t.Errorf("the queue is not logged: %s", buf.String())
 	}
 }
+
+// TestMiddlewareAlertsRetries は、再試行が 5 回目のタスクだけを CRITICAL で知らせることを確かめる（それより後は知らせない）。
+func TestMiddlewareAlertsRetries(t *testing.T) {
+	for retry, want := range map[string]bool{`0`: false, `4`: false, `5`: true, `6`: false} {
+		var buf bytes.Buffer
+		slog.SetDefault(slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})))
+		h := MiddlewareFunc(func(http.ResponseWriter, *http.Request) {})
+		r := httptest.NewRequest(`POST`, `https://jmx.example/tq`, nil)
+		r.Header.Set(`X-Cloudtasks-Taskname`, `task1`)
+		r.Header.Set(`X-Cloudtasks-Queuename`, `jmx`)
+		r.Header.Set(`X-Cloudtasks-Taskretrycount`, retry)
+		h(httptest.NewRecorder(), r)
+		if got := strings.Contains(buf.String(), `The task keeps failing`); got != want {
+			t.Errorf("retry %s: alerted %v, want %v: %s", retry, got, want, buf.String())
+		}
+	}
+}

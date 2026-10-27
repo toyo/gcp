@@ -24,11 +24,21 @@ func MiddlewareFunc(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Cloudtask authorization failed", http.StatusBadRequest)
 			return
 		}
-		slog.DebugContext(ctx, `Cloudtask authorization success`, `task`, task,
-			`queue`, r.Header.Get(`X-Cloudtasks-Queuename`), `retry`, r.Header.Get(`X-Cloudtasks-Taskretrycount`))
+		queue, retry := r.Header.Get(`X-Cloudtasks-Queuename`), r.Header.Get(`X-Cloudtasks-Taskretrycount`)
+		slog.DebugContext(ctx, `Cloudtask authorization success`, `task`, task, `queue`, queue, `retry`, retry)
+		if retry == alertRetry {
+			// キューは再試行の回数と期限の両方に達すると、知らせずにタスクを消す（例：jmx・chatbot は 5 回と 1 時間）。
+			// 消える前に気づけるよう、失敗が続いているタスクを 1 回だけ知らせる（DECISIONS.md「Cloud Tasks の再試行の期限」）。
+			slog.Log(ctx, googlecloudlogging.LevelCritical, `The task keeps failing, it is dropped at the retry limit of the queue`,
+				`task`, task, `queue`, queue, `retry`, retry)
+		}
 		next(w, r)
 	}
 }
+
+// alertRetry は、CRITICAL で知らせる再試行の回数（X-Cloudtasks-Taskretrycount。初回は 0）。間隔が 10 秒から倍々なら、
+// 最初の失敗から約 5 分後。
+const alertRetry = `5`
 
 //
 
